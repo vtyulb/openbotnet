@@ -1,8 +1,7 @@
 #include "server.h"
 
 Server::Server(QObject *parent): QTcpServer(parent) {
-    listen(QHostAddress::Any, 24953);
-    qDebug() << "Listetning on " << 24953;
+    qDebug () << "listening on 24953" << listen(QHostAddress::Any, 24953);
     bots = new QSet<Bot*>;
 }
 
@@ -13,6 +12,7 @@ void Server::incomingConnection(qintptr handle) {
     usingBots.unlock();
 
     QObject::connect(bot, SIGNAL(deleteMe(Bot*)), this, SLOT(deleteBot(Bot*)));
+    QObject::connect(bot, SIGNAL(readyRead()), this, SLOT(somebodyHasSomethingToSay()));
 }
 
 void Server::somebodyHasSomethingToSay() {
@@ -28,7 +28,8 @@ QVector<QHostAddress> Server::getBots() {
 
     usingBots.lock();
     for (QSet<Bot*>::Iterator i = bots->begin(); i != bots->end(); i++)
-        result.push_back((*i)->peerAddress());
+        result.push_back((*i)
+                         ->peerAddress());
     usingBots.unlock();
 
     return result;

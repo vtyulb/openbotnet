@@ -4,6 +4,8 @@
 #include <QThread>
 #include <QTextStream>
 #include <QCoreApplication>
+#include <QMutex>
+#include <QTimer>
 
 #include <server.h>
 
@@ -15,11 +17,18 @@ class Console : public QThread
 
     protected:
         void run();
+
+    private:
         Server *server;
+        QMutex printing;
+        QTextStream *in;
 
     signals:
 
-    public slots:
+    private slots:
+        void processData();
+        void log(QString);
+
 };
 
 #endif // CONSOLE_H

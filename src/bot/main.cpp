@@ -15,6 +15,5 @@ int main() {
     char *c = "hello\n";
     send(mainSocket, c, 6, 0);
 
-
     return 0;
 }

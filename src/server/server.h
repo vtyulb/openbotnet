@@ -25,6 +25,7 @@ class Server : public QTcpServer {
         QMutex usingBots;
 
     signals:
+        void log(QString);
 
     private slots:
         void somebodyHasSomethingToSay();
