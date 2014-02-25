@@ -15,8 +15,10 @@ TEMPLATE = app
 
 SOURCES += main.cpp \
     server.cpp \
-    console.cpp
+    console.cpp \
+    bot.cpp
 
 HEADERS += \
     server.h \
-    console.h
+    console.h \
+    bot.h

@@ -8,26 +8,27 @@
 #include <QMutex>
 #include <QVector>
 
-class Server : public QObject {
+#include <bot.h>
+
+class Server : public QTcpServer {
     Q_OBJECT
     public:
         explicit Server(QObject *parent = 0);
 
         QVector<QHostAddress> getBots();
 
-    private:
-        QTcpServer *server;
-        QSet<QTcpSocket*> *bots;
-        QMutex usingBots;
+    protected:
+        void incomingConnection(qintptr handle);
 
-        void openConnection(QTcpSocket*);
-        void deleteDeadBots();
+    private:
+        QSet<Bot*> *bots;
+        QMutex usingBots;
 
     signals:
 
     private slots:
-        void newConnection();
         void somebodyHasSomethingToSay();
+        void deleteBot(Bot*);
 };
 
 #endif // SERVER_H
