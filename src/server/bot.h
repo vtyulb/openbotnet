@@ -11,7 +11,7 @@ class Bot : public QTcpSocket
         explicit Bot(qintptr handle, QObject *parent = 0);
         ~Bot();
 
-        bool operator < (const Bot &bot) { return this->peerAddress().toIPv4Address() < bot.peerAddress().toIPv4Address(); }
+        bool operator < (const Bot &bot) { return this->socketDescriptor() < bot.socketDescriptor(); }
 
     signals:
         void deleteMe(Bot*);

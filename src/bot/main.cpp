@@ -8,12 +8,12 @@ int main() {
     int mainSocket = socket(AF_INET, SOCK_STREAM, 0);
     sockaddr addr;
     addr.sa_family = AF_INET;
-    *((short*)&addr + 1) = 24953;
+    *((unsigned short*)&addr + 1) = htons(24953);
     *((int*)&addr + 1) = htonl(inet_network("127.0.0.1"));
 
     printf("%d\n", connect(mainSocket, &addr, sizeof(addr)));
-    char *c = "hello";
-    send(mainSocket, c, 5, 0);
+    char *c = "hello\n";
+    send(mainSocket, c, 6, 0);
 
 
     return 0;

@@ -2,6 +2,7 @@
 
 Server::Server(QObject *parent): QTcpServer(parent) {
     listen(QHostAddress::Any, 24953);
+    qDebug() << "Listetning on " << 24953;
     bots = new QSet<Bot*>;
 }
 

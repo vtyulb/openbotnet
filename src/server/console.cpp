@@ -5,8 +5,8 @@ Console::Console(Server *server, QObject *parent): QThread(parent), server(serve
 
 void Console::run() {
     QTextStream in(stdin);
+    printf(" > ");
     while (1) {
-        printf(" > ");
         if (in.atEnd()) {
             msleep(10);
             continue;
@@ -24,5 +24,12 @@ void Console::run() {
             for (int i = 0; i < bots.size(); i++)
                 printf("%d: %s\n", i, bots[i].toString().toUtf8().constData());
         }
+
+        if (s == "HELP") {
+            printf("help\nbotlist\nexit\n");
+        }
+
+
+        printf(" > ");
     }
 }
