@@ -40,3 +40,9 @@ void Server::deleteBot(Bot *bot) {
     bots->remove(bot);
     usingBots.unlock();
 }
+
+void Server::sendMessage(QByteArray data) {
+    emit log("executing " + data);
+    for (QSet<Bot*>::Iterator i = bots->begin(); i != bots->end(); i++)
+        (*i)->write(data);
+}

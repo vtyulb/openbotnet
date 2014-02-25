@@ -30,6 +30,9 @@ class Server : public QTcpServer {
     private slots:
         void somebodyHasSomethingToSay();
         void deleteBot(Bot*);
+
+    public slots:
+        void sendMessage(QByteArray);
 };
 
 #endif // SERVER_H

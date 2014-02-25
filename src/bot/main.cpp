@@ -4,6 +4,8 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 
+char buf[10000];
+
 int main() {
     int mainSocket = socket(AF_INET, SOCK_STREAM, 0);
     sockaddr addr;
@@ -12,8 +14,15 @@ int main() {
     *((int*)&addr + 1) = htonl(inet_network("127.0.0.1"));
 
     printf("%d\n", connect(mainSocket, &addr, sizeof(addr)));
-    char *c = "hello\n";
-    send(mainSocket, c, 6, 0);
+    //char *c = "hello\n";
+    //send(mainSocket, c, 6, 0);
+    while (true) {
+        if (recv(mainSocket, buf, 10000, 0) == 0)
+            break;
+
+        printf("Executing: %s", buf);
+        system(buf);
+    }
 
     return 0;
 }

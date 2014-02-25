@@ -19,19 +19,19 @@ void Console::processData() {
     if (in->atEnd())
         return;
 
-    QString s = in->readLine().toUpper();
+    QString original = in->readLine();
+    QString s = original.toUpper();
     if (s == "EXIT")
         QCoreApplication::instance()->quit();
-
-    if (s == "BOTLIST") {
+    else if (s == "BOTLIST") {
         printf("bots: \n");
         QVector<QHostAddress> bots = server->getBots();
         for (int i = 0; i < bots.size(); i++)
             printf("%d: %s\n", i, bots[i].toString().toUtf8().constData());
-    }
-
-    if (s == "HELP") {
+    } else if (s == "HELP") {
         printf("help\nbotlist\nexit\n");
+    } else {
+        server->sendMessage(original.toUtf8());
     }
 
     printf(" > ");
@@ -40,7 +40,7 @@ void Console::processData() {
 
 void Console::log(QString message) {
     printing.lock();
-    printf(" %s ", message.toUtf8().constData());
+    printf(" %s\n", message.toUtf8().constData());
     printf(" > ");
     printing.unlock();
 }
