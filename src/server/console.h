@@ -29,6 +29,7 @@ class Console : public QThread
         void invite();
 
     signals:
+        void tellBot(QByteArray);
 
     private slots:
         void processData();

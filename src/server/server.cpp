@@ -1,12 +1,21 @@
 #include "server.h"
 
 Server::Server(QObject *parent): QTcpServer(parent) {
-    qDebug () << "listening on 24953" << listen(QHostAddress::Any, 24953);
-    bots = new QSet<Bot*>;
+    bool goodStart = listen(QHostAddress::Any, 24953);
+    if (!goodStart) {
+        printf("Can't reserve port #24953\n");
+        exit(0);
+    } else {
+        printf("listening on 24953\n");
+        bots = new QSet<Bot*>;
+    }
 }
 
 void Server::incomingConnection(qintptr handle) {
     Bot *bot = new Bot(handle, this);
+
+    emit log(bot->peerAddress().toString() + " connected");
+
     usingBots.lock();
     bots->insert(bot);
     usingBots.unlock();
@@ -50,7 +59,7 @@ void Server::deleteBot(Bot *bot) {
 }
 
 void Server::sendMessage(QByteArray data) {
-    emit log("executing " + data);
+    emit log("Broadcasting " + data);
     for (QSet<Bot*>::Iterator i = bots->begin(); i != bots->end(); i++)
         (*i)->safeWrite(data);
 }

@@ -7,8 +7,8 @@
 QT       += core network
 
 TARGET = server
-CONFIG   += console
-CONFIG   -= app_bundle
+CONFIG += console
+CONFIG -= app_bundle
 
 TEMPLATE = app
 
@@ -22,3 +22,5 @@ HEADERS += \
     server.h \
     console.h \
     bot.h
+
+DEFINES += QT_NO_DEBUG_OUTPUT QT_NO_CHECK

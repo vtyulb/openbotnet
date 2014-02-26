@@ -4,7 +4,6 @@ Bot::Bot(qintptr handle, QObject *parent): QTcpSocket(parent) {
     setSocketDescriptor(handle);
     QObject::connect(this, SIGNAL(readyRead()), this, SLOT(readSomething()));
     QObject::connect(this, SIGNAL(disconnected()), this, SLOT(deleteLater()));
-    qDebug() << "connection established" << peerAddress();
 }
 
 Bot::~Bot() {
@@ -15,19 +14,17 @@ void Bot::readSomething() {
     if (!canReadLine())
         return;
 
-    QByteArray array = readLine();
-    if (array[0] == 'D') {
-        currentDirectory = array.right(array.size() - 1).left(array.size() - 2);
-        emit dataAvailable(this, QByteArray());
-        return;
-    }
-
+    QByteArray array;
     while (canReadLine()) {
         QByteArray a = readLine();
         if (a[0] == 'D')
-            continue;
+            currentDirectory = a.right(a.size() - 1).left(a.size() - 2);
+        else {
+            array += a.right(a.size() - 1);
+        }
 
-        array += a.right(a.size() - 1);
+        if (!canReadLine())
+            waitForReadyRead(500);
     }
     emit dataAvailable(this, array);
 }

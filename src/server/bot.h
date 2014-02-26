@@ -27,7 +27,6 @@ class Bot : public QTcpSocket
     public slots:
         void readSomething();
         void safeWrite(QByteArray);
-
 };
 
 #endif // BOT_H

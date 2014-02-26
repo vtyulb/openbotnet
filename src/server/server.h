@@ -2,6 +2,7 @@
 #define SERVER_H
 
 #include <QObject>
+#include <QCoreApplication>
 #include <QTcpServer>
 #include <QTcpSocket>
 #include <QSet>
@@ -27,6 +28,7 @@ class Server : public QTcpServer {
 
     signals:
         void log(QString);
+        void stop();
 
     private slots:
         void somebodyHasSomethingToSay();

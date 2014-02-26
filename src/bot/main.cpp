@@ -18,17 +18,16 @@ void clearBuf() {
 
 int main() {
     int mainSocket = socket(AF_INET, SOCK_STREAM, 0);
-    buf = (new char[max + 2]) + 1;
+    buf = (char *)malloc(max + 2) + 1;
 
     sockaddr addr;
     addr.sa_family = AF_INET;
     *((unsigned short*)&addr + 1) = htons(24953);
-    *((int*)&addr + 1) = htonl(inet_network("127.0.0.1"));
+    *((int*)&addr + 1) = htonl(inet_network("10.8.0.2"));
 
     printf("%d\n", connect(mainSocket, &addr, sizeof(addr)));
     while (true) {
-        for (int i = 0; i < max; i++)
-            buf[i] = 0;
+        clearBuf();
 
         if (recv(mainSocket, buf, max, 0) == 0)
             break;
