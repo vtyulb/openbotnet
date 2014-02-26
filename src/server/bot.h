@@ -3,6 +3,7 @@
 
 #include <QTcpSocket>
 #include <QHostAddress>
+#include <QMutex>
 
 class Bot : public QTcpSocket
 {
@@ -13,11 +14,19 @@ class Bot : public QTcpSocket
 
         bool operator < (const Bot &bot) { return this->socketDescriptor() < bot.socketDescriptor(); }
 
+        QByteArray getCWD();
+
+    private:
+        QMutex writing;
+        QString currentDirectory;
+
     signals:
         void deleteMe(Bot*);
+        void dataAvailable(Bot *, QByteArray);
 
     public slots:
         void readSomething();
+        void safeWrite(QByteArray);
 
 };
 

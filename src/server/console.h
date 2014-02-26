@@ -6,8 +6,10 @@
 #include <QCoreApplication>
 #include <QMutex>
 #include <QTimer>
+#include <QFile>
 
 #include <server.h>
+#include <bot.h>
 
 class Console : public QThread
 {
@@ -22,12 +24,16 @@ class Console : public QThread
         Server *server;
         QMutex printing;
         QTextStream *in;
+        Bot *bot;
+
+        void invite();
 
     signals:
 
     private slots:
         void processData();
         void log(QString);
+        void dataFromBot(Bot*, QByteArray);
 
 };
 

@@ -35,6 +35,14 @@ QVector<QHostAddress> Server::getBots() {
     return result;
 }
 
+Bot *Server::getBot(QHostAddress address) {
+    for (QSet<Bot*>::Iterator i = bots->begin(); i != bots->end(); i++)
+        if ((*i)->peerAddress() == address)
+            return *i;
+
+    return NULL;
+}
+
 void Server::deleteBot(Bot *bot) {
     usingBots.lock();
     bots->remove(bot);
@@ -44,5 +52,5 @@ void Server::deleteBot(Bot *bot) {
 void Server::sendMessage(QByteArray data) {
     emit log("executing " + data);
     for (QSet<Bot*>::Iterator i = bots->begin(); i != bots->end(); i++)
-        (*i)->write(data);
+        (*i)->safeWrite(data);
 }

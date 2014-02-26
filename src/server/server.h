@@ -16,6 +16,7 @@ class Server : public QTcpServer {
         explicit Server(QObject *parent = 0);
 
         QVector<QHostAddress> getBots();
+        Bot *getBot(QHostAddress);
 
     protected:
         void incomingConnection(qintptr handle);
