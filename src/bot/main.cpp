@@ -15,7 +15,7 @@
 #include <cryptopp/aes.h>
 #include <cryptopp/modes.h>
 
-#include <base64.h>
+#include "base64.h"
 
 using std::string;
 using namespace CryptoPP;
@@ -126,7 +126,7 @@ void initNET() {
     sockaddr addr;
     addr.sa_family = AF_INET;
     *((unsigned short*)&addr + 1) = htons(24953);
-    *((int*)&addr + 1) = htonl(inet_network("127.0.0.1"));
+    *((int*)&addr + 1) = htonl(inet_network("10.8.0.2"));
 
     connect(mainSocket, &addr, sizeof(addr));
 }

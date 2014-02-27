@@ -25,7 +25,7 @@ void Console::processData() {
         if (bot)
             bot = NULL;
         else
-            QCoreApplication::instance()->quit();
+            qApp->exit(0);
     else if (bot) {
         emit tellBot(original.toUtf8());
         printing.unlock();

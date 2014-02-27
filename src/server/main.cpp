@@ -10,5 +10,7 @@ int main(int argc, char *argv[])
     Console console(&server);
     console.start();
 
+    QObject::connect(&console, SIGNAL(finished()), &a, SLOT(quit()));
+
     return a.exec();
 }
