@@ -12,7 +12,10 @@ TARGET = bot
 CONFIG   += console
 CONFIG   -= app_bundle
 
+LIBS += -lcryptopp
+
 TEMPLATE = app
 
 
-SOURCES += main.cpp
+SOURCES += main.cpp base64.cpp
+HEADERS += base64.h

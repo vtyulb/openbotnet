@@ -23,4 +23,4 @@ HEADERS += \
     console.h \
     bot.h
 
-DEFINES += QT_NO_DEBUG_OUTPUT QT_NO_CHECK
+LIBS += -lcryptopp

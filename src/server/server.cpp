@@ -21,15 +21,6 @@ void Server::incomingConnection(qintptr handle) {
     usingBots.unlock();
 
     QObject::connect(bot, SIGNAL(deleteMe(Bot*)), this, SLOT(deleteBot(Bot*)));
-    QObject::connect(bot, SIGNAL(readyRead()), this, SLOT(somebodyHasSomethingToSay()));
-}
-
-void Server::somebodyHasSomethingToSay() {
-    for (QSet<Bot*>::Iterator i = bots->begin(); i != bots->end(); i++) {
-        QTcpSocket *socket = *i;
-        while (socket->canReadLine())
-            qDebug() << socket->readLine() << "from" << socket->peerAddress();
-    }
 }
 
 QVector<QHostAddress> Server::getBots() {

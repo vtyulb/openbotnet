@@ -31,7 +31,6 @@ class Server : public QTcpServer {
         void stop();
 
     private slots:
-        void somebodyHasSomethingToSay();
         void deleteBot(Bot*);
 
     public slots:

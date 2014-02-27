@@ -86,8 +86,8 @@ void Console::dataFromBot(Bot *b, QByteArray data) {
         printing.lock();
         if (data.size())
             printf("%s", data.constData());
-
-        invite();
+        else
+            invite();
 
         printing.unlock();
     } else
