@@ -1,6 +1,7 @@
 #include "server.h"
 
 Server::Server(QObject *parent): QTcpServer(parent) {
+    loadRSAkey();
     bool goodStart = listen(QHostAddress::Any, 24953);
     if (!goodStart) {
         printf("Can't reserve port #24953\n");
@@ -11,8 +12,20 @@ Server::Server(QObject *parent): QTcpServer(parent) {
     }
 }
 
+void Server::loadRSAkey() {
+    QFile file(QString("private"));
+    file.open(QIODevice::ReadOnly);
+    QByteArray key = file.readAll();
+    ByteQueue q;
+
+    for (int i = 0; i < key.size(); i++)
+        q.Put(key[i]);
+
+    privateKey.Load(q);
+}
+
 void Server::incomingConnection(qintptr handle) {
-    Bot *bot = new Bot(handle, this);
+    Bot *bot = new Bot(handle, &privateKey, this);
 
     emit log(bot->peerAddress().toString() + " connected");
 

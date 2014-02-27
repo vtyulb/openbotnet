@@ -10,14 +10,16 @@
 #include <cryptopp/filters.h>
 #include <cryptopp/rsa.h>
 #include <cryptopp/modes.h>
+#include <cryptopp/osrng.h>
 
 using namespace CryptoPP;
+using std::string;
 
 class Bot : public QTcpSocket
 {
     Q_OBJECT
     public:
-        explicit Bot(qintptr handle, QObject *parent = 0);
+        explicit Bot(qintptr handle, RSA::PrivateKey *key, QObject *parent = 0);
         ~Bot();
 
         bool operator < (const Bot &bot) { return this->socketDescriptor() < bot.socketDescriptor(); }
@@ -28,12 +30,18 @@ class Bot : public QTcpSocket
         QMutex writing;
         QString currentDirectory;
 
+        AutoSeededRandomPool rng;
+
         CFB_Mode<AES>::Encryption *cfbEncryption;
         CFB_Mode<AES>::Decryption *cfbDecryption;
 
+        RSAES_OAEP_SHA_Decryptor *RSAdecryptor;
+        RSA::PrivateKey *privateKey;
         QByteArray decrypt(QByteArray);
         QByteArray encrypt(QByteArray);
 
+        void initRSA();
+        QByteArray decryptRSA(QByteArray);
 
 
     signals:

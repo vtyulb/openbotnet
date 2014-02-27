@@ -16,7 +16,8 @@ TEMPLATE = app
 SOURCES += main.cpp \
     server.cpp \
     console.cpp \
-    bot.cpp
+    bot.cpp \
+    ../bot/base64.cpp
 
 HEADERS += \
     server.h \
