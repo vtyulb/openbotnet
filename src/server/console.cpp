@@ -37,27 +37,26 @@ void Console::processData() {
             printf("%d: %s\n", i, bots[i].toString().toUtf8().constData());
     } else if (s == "HELP") {
         printf("help\nbotlist\nls\nset bot\n\nexit\n");
-    } else if (s.left(3) == "SET") {
-        if (s.right(s.length() - 4).left(3) == "BOT") {
+    } else if (s.left(7) == "SET BOT" || s.left(2) == "CD") {
+        if (s.left(2) == "CD")
+            bot = server->getBot(QHostAddress(s.right(s.length() - 3)));
+        else
             bot = server->getBot(QHostAddress(s.right(s.length() - 8)));
-            if (bot == NULL)
-                printf("Bot not found\n");
-            else {
-                QObject::connect(bot,
-                                 SIGNAL(dataAvailable(Bot*, QByteArray)),
-                                 this,
-                                 SLOT(dataFromBot(Bot*, QByteArray)),
-                                 Qt::DirectConnection);
 
-                QObject::connect(this,
-                                 SIGNAL(tellBot(QByteArray)),
-                                 bot,
-                                 SLOT(safeWrite(QByteArray)));
-
-                emit tellBot("cd .");
-            }
-        } else
-            printf("Unknown variable %s\n", s.right(s.length() - 4).toUtf8().constData());
+        if (bot == NULL)
+            printf("Bot not found\n");
+        else {
+            QObject::connect(bot,
+                             SIGNAL(dataAvailable(Bot*, QByteArray)),
+                             this,
+                             SLOT(dataFromBot(Bot*, QByteArray)),
+                             Qt::DirectConnection);
+            QObject::connect(this,
+                             SIGNAL(tellBot(QByteArray)),
+                             bot,
+                             SLOT(safeWrite(QByteArray)));
+            emit tellBot("cd .");
+        }
     } else if (s.left(4) == "EXEC" && !bot) {
         server->sendMessage(original.right(original.length() - 5).toUtf8());
     }

