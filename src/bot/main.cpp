@@ -55,6 +55,7 @@ int mainSocket;
 
 void recvDecrypted();
 void recvTimeout(int);
+void scanBuf();
 void clearBuf();
 string encryptRSA(string text);
 void initRSA();
@@ -133,15 +134,16 @@ void initAES() {
     if (strncmp("vtyulb", buf, 6) == 0)
         printf("server authorized\n");
     else {
+        printf("false server??\n");
         initNET();
         initAES();
         return;
     }
 }
 
-void recvDecrypted() {
+void scanBuf() {
     alarm(30);
-    if (recv(mainSocket, buf, max, 0) == 0) {
+    if (recv(mainSocket, buf, 1, 0) == 0) {
         alarm(0);
         initNET();
         initAES();
@@ -149,9 +151,19 @@ void recvDecrypted() {
         return;
     }
     alarm(0);
+
+    int cur = 0;
+    while (buf[cur] != '\n')
+        recv(mainSocket, buf + ++cur, 1, 0);
+
+    buf[cur] = 0;
+
     printf("Got: %s\n", buf);
     fflush(stdout);
+}
 
+void recvDecrypted() {
+    scanBuf();
     string half = base64_decode(string((char*)buf));
     cfbDecryption->ProcessData((byte*)buf, (byte*)half.c_str(), half.size());
     buf[half.size()] = 0;

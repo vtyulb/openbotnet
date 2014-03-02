@@ -94,7 +94,7 @@ void Bot::readSomething() {
 
 void Bot::safeWrite(QByteArray data) {
     writing.lock();
-    write(encrypt(data));
+    write(encrypt(data) + '\n');
     flush();
     writing.unlock();
 }
