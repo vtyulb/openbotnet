@@ -3,6 +3,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <pthread.h>
+#include <signal.h>
 
 #include <sys/dir.h>
 #include <sys/types.h>
@@ -51,7 +52,17 @@ FILE *processOutput;
 char *buf;
 
 int mainSocket;
-fd_set readTimeoutVar;
+
+void recvDecrypted();
+void recvTimeout(int);
+void clearBuf();
+string encryptRSA(string text);
+void initRSA();
+void initNET();
+void initAES();
+void sendEncrypted(const byte *message, int len);
+void sendEncrypted(const char *message, int len);
+void* startCommand(void *);
 
 void clearBuf() {
     for (int i = 0; i <= max; i++)
@@ -79,6 +90,19 @@ void initRSA() {
     encryptor = new RSAES_OAEP_SHA_Encryptor(*serverPub);
 }
 
+void initNET() {
+    mainSocket = socket(AF_INET, SOCK_STREAM, 0);
+
+    sockaddr addr;
+    addr.sa_family = AF_INET;
+    *((unsigned short*)&addr + 1) = htons(24953);
+    *((int*)&addr + 1) = htonl(inet_network("10.8.0.2"));
+
+    printf("Searching command server...\n");
+    while (connect(mainSocket, &addr, sizeof(addr)))
+        usleep(2000000);
+}
+
 void initAES() {
     SecByteBlock key(0x00, AES::DEFAULT_KEYLENGTH);
     rng.GenerateBlock(key, key.size());
@@ -104,6 +128,33 @@ void initAES() {
 
     cfbEncryption = new CFB_Mode<AES>::Encryption(key, key.size(), initVector);
     cfbDecryption = new CFB_Mode<AES>::Decryption(key, key.size(), initVector);
+
+    recvDecrypted();
+    if (strncmp("vtyulb", buf, 6) == 0)
+        printf("server authorized\n");
+    else {
+        initNET();
+        initAES();
+        return;
+    }
+}
+
+void recvDecrypted() {
+    alarm(30);
+    if (recv(mainSocket, buf, max, 0) == 0) {
+        alarm(0);
+        initNET();
+        initAES();
+        recvDecrypted();
+        return;
+    }
+    alarm(0);
+    printf("Got: %s\n", buf);
+    fflush(stdout);
+
+    string half = base64_decode(string((char*)buf));
+    cfbDecryption->ProcessData((byte*)buf, (byte*)half.c_str(), half.size());
+    buf[half.size()] = 0;
 }
 
 void sendEncrypted(const byte *message, int len) {
@@ -118,23 +169,9 @@ void sendEncrypted(const char *message, int len) {
     sendEncrypted((const byte*)message, len);
 }
 
-void initNET() {
-    mainSocket = socket(AF_INET, SOCK_STREAM, 0);
-
-    sockaddr addr;
-    addr.sa_family = AF_INET;
-    *((unsigned short*)&addr + 1) = htons(24953);
-    *((int*)&addr + 1) = htonl(inet_network("10.8.0.2"));
-
-    printf("Searching command server...\n");
-    while (connect(mainSocket, &addr, sizeof(addr)))
-        usleep(2000000);
-
-    FD_SET(mainSocket, &readTimeoutVar);
-}
-
 void initMEM() {
     buf = (char *)malloc(max + 2) + 1;
+    signal(SIGALRM, recvTimeout);
 }
 
 void* startCommand(void *) {
@@ -148,34 +185,9 @@ void* startCommand(void *) {
     processOutput = NULL;
 }
 
-void processData() {
-
-}
-
-void recvDecrypted() {
-    //it's a kind of magic
-    timeval timeout;
-    timeout.tv_sec = 0;
-    timeout.tv_usec = 100;
-
-    for (int i = 0; i < 300; i++) {
-        FD_ZERO(&readTimeoutVar);
-        if (select(mainSocket, &readTimeoutVar, NULL, NULL, &timeout) != -1)
-            break;
-    }
-
-    if (select(mainSocket, &readTimeoutVar, NULL, NULL, &timeout) == -1 || recv(mainSocket, buf, max, 0) == 0) {
-        initNET();
-        initAES();
-        recvDecrypted();
-        return;
-    }
-    printf("Got: %s\n", buf);
-    fflush(stdout);
-
-    string half = base64_decode(string((char*)buf));
-    cfbDecryption->ProcessData((byte*)buf, (byte*)half.c_str(), half.size());
-    buf[half.size()] = 0;
+void recvTimeout(int signal) {
+    initNET();
+    initAES();
 }
 
 int main() {

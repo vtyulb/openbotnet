@@ -43,6 +43,8 @@ void Bot::initAES() {
     cfbEncryption = new CFB_Mode<AES>::Encryption((byte*)data.data(), AES::DEFAULT_KEYLENGTH, (byte*)data.data() + AES::DEFAULT_KEYLENGTH);
     cfbDecryption = new CFB_Mode<AES>::Decryption((byte*)data.data(), AES::DEFAULT_KEYLENGTH, (byte*)data.data() + AES::DEFAULT_KEYLENGTH);
     QObject::connect(this, SIGNAL(readyRead()), this, SLOT(readSomething()));
+
+    safeWrite("vtyulb");
 }
 
 QByteArray Bot::encrypt(QByteArray data) {
