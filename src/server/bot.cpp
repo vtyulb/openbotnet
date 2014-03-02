@@ -60,6 +60,9 @@ void Bot::readSomething() {
     if (!canReadLine())
         return;
 
+    ping->start();
+    disconnectTimer->start();
+
     QByteArray array;
     while (canReadLine()) {
         QByteArray a = decrypt(readLine());
