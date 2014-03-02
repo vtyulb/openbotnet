@@ -59,6 +59,7 @@ Bot *Server::getBot(QHostAddress address) {
 void Server::deleteBot(Bot *bot) {
     usingBots.lock();
     bots->remove(bot);
+    emit log("removing bot" + bot->peerAddress().toString());
     usingBots.unlock();
 }
 

