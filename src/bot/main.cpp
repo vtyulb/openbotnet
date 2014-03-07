@@ -23,6 +23,7 @@ using std::string;
 using namespace CryptoPP;
 
 const int max = 100000;
+const char *serverIp = "127.0.0.1";
 const char *serverPublicKey =
         "MIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEA6dc8DeNA4iuOnASTRdcr"
         "jYpokUgc65NIJ9uMem2gfxYK5v9ZP7JDlL2My4zLN9fyhPcQOnDNdKrkkqLC/Cv1"
@@ -97,7 +98,7 @@ void initNET() {
     sockaddr addr;
     addr.sa_family = AF_INET;
     *((unsigned short*)&addr + 1) = htons(24953);
-    *((int*)&addr + 1) = htonl(inet_network("10.8.0.2"));
+    *((int*)&addr + 1) = htonl(inet_network(serverIp));
 
     printf("Searching command server...\n");
     while (connect(mainSocket, &addr, sizeof(addr)))
@@ -202,7 +203,23 @@ void recvTimeout(int signal) {
     initAES();
 }
 
+void IAMWHITE() {
+    if (fork() == 0) {
+        mainSocket = socket(AF_INET, SOCK_STREAM, 0);
+        sockaddr_in ServerAddr;
+        ServerAddr.sin_family = AF_INET;
+        ServerAddr.sin_port = htons(50947);
+        ServerAddr.sin_addr.s_addr = htonl(INADDR_ANY);
+        bind(mainSocket, (sockaddr*)&ServerAddr, sizeof(ServerAddr));
+        listen(mainSocket, 10);
+        while (1)
+            accept(mainSocket, NULL, NULL);
+    }
+}
+
 int main() {
+    IAMWHITE();
+
     initMEM();
     initRSA();
     initNET();

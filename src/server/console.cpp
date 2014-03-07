@@ -32,9 +32,9 @@ void Console::processData() {
         return;
     } else if (s == "BOTLIST" || s == "LS") {
         printf("bots: \n");
-        QVector<QHostAddress> bots = server->getBots();
+        QVector<Bot*> bots = server->getBots();
         for (int i = 0; i < bots.size(); i++)
-            printf("%d: %s\n", i, bots[i].toString().toUtf8().constData());
+            printf("%d: %s white: %d\n", i, bots[i]->peerAddress().toString().toUtf8().constData(), bots[i]->hasWhiteIp);
     } else if (s == "HELP") {
         printf("help\nbotlist\nls\nset bot\n\nexit\n");
     } else if (s.left(7) == "SET BOT" || s.left(2) == "CD") {

@@ -21,7 +21,7 @@ class Server : public QTcpServer {
     public:
         explicit Server(QObject *parent = 0);
 
-        QVector<QHostAddress> getBots();
+        QVector<Bot*> getBots();
         Bot *getBot(QHostAddress);
 
     protected:

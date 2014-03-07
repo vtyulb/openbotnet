@@ -36,13 +36,11 @@ void Server::incomingConnection(qintptr handle) {
     QObject::connect(bot, SIGNAL(deleteMe(Bot*)), this, SLOT(deleteBot(Bot*)));
 }
 
-QVector<QHostAddress> Server::getBots() {
-    QVector<QHostAddress> result;
-
+QVector<Bot*> Server::getBots() {
+    QVector<Bot*> result;
     usingBots.lock();
     for (QSet<Bot*>::Iterator i = bots->begin(); i != bots->end(); i++)
-        result.push_back((*i)
-                         ->peerAddress());
+        result.push_back(*i);
     usingBots.unlock();
 
     return result;

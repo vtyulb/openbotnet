@@ -1,6 +1,10 @@
 #include "bot.h"
 
-Bot::Bot(qintptr handle, RSA::PrivateKey *key, QObject *parent): QTcpSocket(parent), privateKey(key) {
+Bot::Bot(qintptr handle, RSA::PrivateKey *key, QObject *parent):
+    QTcpSocket(parent),
+    privateKey(key),
+    hasWhiteIp(false)
+{
     setSocketDescriptor(handle);
     QObject::connect(this, SIGNAL(disconnected()), this, SLOT(deleteLater()));
 
@@ -16,6 +20,7 @@ Bot::Bot(qintptr handle, RSA::PrivateKey *key, QObject *parent): QTcpSocket(pare
     QObject::connect(disconnectTimer, SIGNAL(timeout()), this, SLOT(timeToDisconnect()));
     QTimer::singleShot(1000, this, SLOT(initAES()));
     initRSA();
+    checkForWhiteIp();
 }
 
 Bot::~Bot() {
@@ -126,4 +131,14 @@ void Bot::timeToPing() {
 
 void Bot::timeToDisconnect() {
     abort();
+}
+
+void Bot::checkForWhiteIp() {
+    QTcpSocket *tmp = new QTcpSocket;
+    QObject::connect(tmp, SIGNAL(connected()), this, SLOT(setWhiteIp()));
+    tmp->connectToHost(this->peerAddress(), 50947);
+}
+
+void Bot::setWhiteIp() {
+    hasWhiteIp = true;
 }
