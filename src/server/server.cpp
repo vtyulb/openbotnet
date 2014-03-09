@@ -47,10 +47,14 @@ QVector<Bot*> Server::getBots() {
 }
 
 Bot *Server::getBot(QHostAddress address) {
+    usingBots.lock();
     for (QSet<Bot*>::Iterator i = bots->begin(); i != bots->end(); i++)
-        if ((*i)->peerAddress() == address)
+        if ((*i)->peerAddress() == address) {
+            usingBots.unlock();
             return *i;
+        }
 
+    usingBots.unlock();
     return NULL;
 }
 
@@ -62,7 +66,26 @@ void Server::deleteBot(Bot *bot) {
 }
 
 void Server::sendMessage(QByteArray data) {
-    emit log("Broadcasting " + data);
+    usingBots.lock();
+    emit log("Broadcasting " + data.toHex());
     for (QSet<Bot*>::Iterator i = bots->begin(); i != bots->end(); i++)
         (*i)->safeWrite(data);
+
+    usingBots.unlock();
+}
+
+void Server::dumpWhitelist() {
+    usingBots.lock();
+    QVector<unsigned int> addresses;
+    for (QSet<Bot*>::Iterator i = bots->begin(); i != bots->end(); i++)
+        if ((*i)->hasWhiteIp)
+            addresses.push_back((*i)->peerAddress().toIPv4Address());
+
+    usingBots.unlock();
+
+    sendMessage("DUMP WHITELIST" + QByteArray((char*)addresses.data(), addresses.size() * 4));
+}
+
+RSA::PrivateKey Server::getPrivateKey() {
+    return privateKey;
 }

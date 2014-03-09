@@ -23,6 +23,8 @@ class Server : public QTcpServer {
 
         QVector<Bot*> getBots();
         Bot *getBot(QHostAddress);
+        void dumpWhitelist();
+        RSA::PrivateKey getPrivateKey();
 
     protected:
         void incomingConnection(qintptr handle);

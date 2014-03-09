@@ -44,8 +44,6 @@ class Bot : public QTcpSocket
         void initRSA();
         QByteArray decryptRSA(QByteArray);
 
-        void checkForWhiteIp();
-
     signals:
         void deleteMe(Bot*);
         void dataAvailable(Bot *, QByteArray);
@@ -59,6 +57,7 @@ class Bot : public QTcpSocket
         void timeToPing();
         void timeToDisconnect();
         void setWhiteIp();
+        void checkForWhiteIp();
 };
 
 #endif // BOT_H

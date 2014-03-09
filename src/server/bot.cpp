@@ -20,7 +20,7 @@ Bot::Bot(qintptr handle, RSA::PrivateKey *key, QObject *parent):
     QObject::connect(disconnectTimer, SIGNAL(timeout()), this, SLOT(timeToDisconnect()));
     QTimer::singleShot(1000, this, SLOT(initAES()));
     initRSA();
-    checkForWhiteIp();
+    QTimer::singleShot(5000, this, SLOT(checkForWhiteIp()));
 }
 
 Bot::~Bot() {

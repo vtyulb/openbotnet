@@ -7,6 +7,7 @@
 #include <QMutex>
 #include <QTimer>
 #include <QFile>
+#include <QEventLoop>
 
 #include <server.h>
 #include <bot.h>
@@ -27,6 +28,8 @@ class Console : public QThread
         Bot *bot;
 
         void invite();
+        void notice(QString ip);
+        void mySleep(int msec);
 
     signals:
         void tellBot(QByteArray);
